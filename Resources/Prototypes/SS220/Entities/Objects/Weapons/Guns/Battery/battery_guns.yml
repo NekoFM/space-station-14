@@ -322,6 +322,47 @@
           tags:
             - LaserCarabinePowerCell
 
+- type: entity
+  parent: BaseWeaponPowerCell
+  id: WeaponEnergyGunFusil
+  name: laser fusil
+  description: The Laser Fusil is a powerful, anti-personnel heavy Laser Weapon
+  components:
+  - type: Sprite
+    sprite: SS220/Objects/Weapons/Guns/Battery/laser_revolver.rsi
+    layers:
+    - state: base
+      map: ["enum.GunVisualLayers.Base"]
+    - state: laser-mag-unshaded-5
+      map: ["enum.GunVisualLayers.MagUnshaded"]
+      shader: unshaded
+  - type: Clothing
+    sprite: SS220/Objects/Weapons/Guns/Battery/laser_revolver.rsi
+  - type: Gun
+    fireRate: 1.2
+    soundGunshot:
+      path: /Audio/Weapons/Guns/Gunshots/laser_cannon.ogg
+  - type: BatteryAmmoProvider
+    proto: FusilLaser
+    fireCost: 150
+  - type: MagazineVisuals
+    magState: laser-mag
+    steps: 6
+    zeroVisible: true
+  - type: ItemSlots
+    slots:
+      cell_slot:
+        name: Magazine
+        startingItem: PowerCellBlasterHighCapacity
+        insertSound: /Audio/Weapons/Guns/MagIn/batrifle_magin.ogg
+        ejectSound: /Audio/Weapons/Guns/MagOut/batrifle_magout.ogg
+        whitelist:
+          tags:
+            - PowerCellBlaster
+  - type: Appearance
+  - type: StaticPrice
+    price: 750
+
 # Новые прототипы пишите выше
 # Death Squad
 - type: entity

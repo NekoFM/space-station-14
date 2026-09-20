@@ -124,3 +124,25 @@
   - type: HitscanBasicRaycast
     collisionMask: 256
     maxDistance: 10
+
+- type: entity
+  parent: BasicHitscan
+  name: impulse fusil laser
+  id: FusilLaser
+  categories: [ HideSpawnMenu ]
+  components:
+  - type: HitscanBasicDamage
+    damage:
+      types:
+        Heat: 75
+        Structural: 200
+  - type: HitscanBasicVisuals
+    muzzleFlash:
+      sprite: Objects/Weapons/Guns/Projectiles/projectiles.rsi
+      state: muzzle_u_laser
+    travelFlash:
+      sprite: Objects/Weapons/Guns/Projectiles/projectiles.rsi
+      state: u_laser
+    impactFlash:
+      sprite: Objects/Weapons/Guns/Projectiles/projectiles.rsi
+      state: impact_u_laser
