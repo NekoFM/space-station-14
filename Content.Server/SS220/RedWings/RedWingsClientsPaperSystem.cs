@@ -9,10 +9,11 @@ using Content.Shared.Station;
 using System.Linq;
 using Robust.Shared.Prototypes;
 using Content.Shared.Roles;
-using Robust.Server.Player;
 using Content.Shared.Mind;
+using Robust.Server.Player;
 using Robust.Shared.Enums;
-using Robust.Shared.Collections;
+using Content.Shared.Ghost;
+using Content.Shared.Bed.Cryostorage;
 
 namespace Content.Server.SS220.RedWings;
 
@@ -23,8 +24,8 @@ public sealed partial class RedWingsClientPaperSystem : EntitySystem
     [Dependency] private StationRecordsSystem _stationRecords = default!;
     [Dependency] private SharedStationSystem _station = default!;
     [Dependency] private IPrototypeManager _prototypeManager = default!;
-    [Dependency] private IPlayerManager _playerManager = default!;
     [Dependency] private SharedMindSystem _mind = default!;
+    [Dependency] private IPlayerManager _playerManager = default!;
 
     public override void Initialize()
     {
@@ -76,14 +77,6 @@ public sealed partial class RedWingsClientPaperSystem : EntitySystem
             }
         }
 
-        var idToEntity = new Dictionary<uint, EntityUid>();
-        var query = EntityQueryEnumerator<StationRecordKeyStorageComponent>();
-        while (query.MoveNext(out var entityUid, out var keyStorage))
-        {
-            if (keyStorage.Key != null)
-                idToEntity[keyStorage.Key.Value.Id] = entityUid;
-        }
-
         var validRecords = new List<(uint, GeneralStationRecord)>();
 
         foreach (var record in allRecords)
@@ -96,22 +89,36 @@ public sealed partial class RedWingsClientPaperSystem : EntitySystem
             if (forbiddenSpecies.Contains(generalRecord.Species))
                 continue;
 
-            if (!idToEntity.TryGetValue(record.Item1, out var entityUid))
-                continue;
+            var foundPlayer = false;
+            foreach (var session in _playerManager.Sessions)
+            {
+                if (session.Status != SessionStatus.InGame)
+                    continue;
 
-            if (!_mind.TryGetMind(entityUid, out _, out var mindComp))
-                continue;
+                if (session.AttachedEntity is not { } entityUid)
+                    continue;
 
-            if (mindComp.UserId == null)
-                continue;
+                var entityName = MetaData(entityUid).EntityName;
+                if (entityName != generalRecord.Name)
+                    continue;
 
-            if (!_playerManager.TryGetSessionById(mindComp.UserId.Value, out var session))
-                continue;
+                if (HasComp<GhostComponent>(entityUid))
+                    continue;
 
-            if (session.Status != SessionStatus.Connected)
-                continue;
+                if (HasComp<CryostorageContainedComponent>(entityUid))
+                    continue;
 
-            if (session.AttachedEntity == null || session.AttachedEntity.Value != entityUid)
+                if (!_mind.TryGetMind(entityUid, out _, out var mindComp))
+                    continue;
+
+                if (mindComp.UserId != session.UserId)
+                    continue;
+
+                foundPlayer = true;
+                break;
+            }
+
+            if (!foundPlayer)
                 continue;
 
             validRecords.Add(record);
