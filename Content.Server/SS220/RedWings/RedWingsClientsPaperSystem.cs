@@ -9,6 +9,10 @@ using Content.Shared.Station;
 using System.Linq;
 using Robust.Shared.Prototypes;
 using Content.Shared.Roles;
+using Robust.Server.Player;
+using Content.Shared.Mind;
+using Robust.Shared.Enums;
+using Robust.Shared.Collections;
 
 namespace Content.Server.SS220.RedWings;
 
@@ -19,6 +23,8 @@ public sealed partial class RedWingsClientPaperSystem : EntitySystem
     [Dependency] private StationRecordsSystem _stationRecords = default!;
     [Dependency] private SharedStationSystem _station = default!;
     [Dependency] private IPrototypeManager _prototypeManager = default!;
+    [Dependency] private IPlayerManager _playerManager = default!;
+    [Dependency] private SharedMindSystem _mind = default!;
 
     public override void Initialize()
     {
@@ -50,6 +56,7 @@ public sealed partial class RedWingsClientPaperSystem : EntitySystem
         redWingsClientList = null;
         var clientAmount = component.ClientAmount;
         var forbiddenDepartment = component.ForbiddenDepartment;
+        var forbiddenSpecies = component.ForbiddenSpecies;
         var clientMessage = new FormattedMessage();
 
         if (_station.GetStations().FirstOrNull() is not { } station)
@@ -69,15 +76,52 @@ public sealed partial class RedWingsClientPaperSystem : EntitySystem
             }
         }
 
-        var filteredRecords = allRecords
-            .Where(record => !forbiddenJobIds.Contains(record.Item2.JobPrototype))
-            .ToList();
+        var idToEntity = new Dictionary<uint, EntityUid>();
+        var query = EntityQueryEnumerator<StationRecordKeyStorageComponent>();
+        while (query.MoveNext(out var entityUid, out var keyStorage))
+        {
+            if (keyStorage.Key != null)
+                idToEntity[keyStorage.Key.Value.Id] = entityUid;
+        }
 
-        if (filteredRecords.Count == 0)
+        var validRecords = new List<(uint, GeneralStationRecord)>();
+
+        foreach (var record in allRecords)
+        {
+            var generalRecord = record.Item2;
+
+            if (forbiddenJobIds.Contains(generalRecord.JobPrototype))
+                continue;
+
+            if (forbiddenSpecies.Contains(generalRecord.Species))
+                continue;
+
+            if (!idToEntity.TryGetValue(record.Item1, out var entityUid))
+                continue;
+
+            if (!_mind.TryGetMind(entityUid, out _, out var mindComp))
+                continue;
+
+            if (mindComp.UserId == null)
+                continue;
+
+            if (!_playerManager.TryGetSessionById(mindComp.UserId.Value, out var session))
+                continue;
+
+            if (session.Status != SessionStatus.Connected)
+                continue;
+
+            if (session.AttachedEntity == null || session.AttachedEntity.Value != entityUid)
+                continue;
+
+            validRecords.Add(record);
+        }
+
+        if (validRecords.Count == 0)
             return false;
 
-        _random.Shuffle(filteredRecords);
-        var selectedRecords = filteredRecords.Take(clientAmount).ToList();
+        _random.Shuffle(validRecords);
+        var selectedRecords = validRecords.Take(clientAmount).ToList();
 
         clientMessage.PushNewline();
         foreach (var record in selectedRecords)
