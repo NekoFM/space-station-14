@@ -21,3 +21,4 @@ health-analyzer-report-entity-unrevivable-text = Обнаружено уника
 health-analyzer-report-entity-bleeding-text = У пациента открытые раны!
 health-analyzer-report-none = Нет
 health-analyzer-report-date-time = Дата и время: { $dateTime }
+health-analyzer-report-dna = ДНК: {$dna}
