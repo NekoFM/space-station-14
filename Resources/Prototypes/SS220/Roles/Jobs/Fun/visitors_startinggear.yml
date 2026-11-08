@@ -29,7 +29,7 @@
   equipment:
     jumpsuit: ClothingUniformJumpsuitMilitaryFeldsher
     back: ClothingBackpackSecurity
-    shoes: ClothingShoesBootsCombatFilled
+    shoes: ClothingShoesBootsMagRW
     eyes: ClothingEyesGlassesBallistic
     mask: ClothingMaskNeckGaiter
     gloves: ClothingHandsGlovesCombat
@@ -61,7 +61,7 @@
   equipment:
     jumpsuit: ClothingUniformJumpsuitMilitaryFeldsher
     back: ClothingBackpackSatchelBrigmedic
-    shoes: ClothingShoesBootsCombatFilled
+    shoes: ClothingShoesBootsMagRW
     eyes: ClothingEyesHudSyndChem
     mask: ClothingMaskNeckGaiterRed
     gloves: ClothingHandsGlovesCombat
@@ -99,7 +99,7 @@
   equipment:
     jumpsuit: ClothingUniformJumpsuitMilitaryFeldsher
     back: ClothingBackpackSecurity
-    shoes: ClothingShoesBootsCombatFilled
+    shoes: ClothingShoesBootsMagRW
     eyes: ClothingEyesGlassesBallistic
     mask: ClothingMaskNeckGaiter
     gloves: ClothingHandsGlovesCombat
