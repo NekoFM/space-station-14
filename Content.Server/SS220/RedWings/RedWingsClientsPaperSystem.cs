@@ -52,6 +52,18 @@ public sealed partial class RedWingsClientPaperSystem : EntitySystem
         }
     }
 
+private string GetRandomInsuranceLevel()
+{
+    var roll = _random.NextDouble();
+    
+    if (roll < 0.6)
+        return Loc.GetString("book-text-redwings-insurance-silver");
+    else if (roll < 0.9)
+        return Loc.GetString("book-text-redwings-insurance-gold");
+    else
+        return Loc.GetString("book-text-redwings-insurance-platinum");
+}
+
     private bool TryGetClientList(RedWingsClientPaperComponent component, [NotNullWhen(true)] out string? redWingsClientList)
     {
         redWingsClientList = null;
@@ -135,9 +147,10 @@ public sealed partial class RedWingsClientPaperSystem : EntitySystem
         {
             var name = record.Item2.Name;
             var dna = record.Item2.DNA;
+            var insurance = GetRandomInsuranceLevel();
 
             clientMessage.PushNewline();
-            clientMessage.AddMarkupPermissive(Loc.GetString("book-text-redwings-client-middle", ("dna", dna ?? ""), ("name", name)));
+            clientMessage.AddMarkupPermissive(Loc.GetString("book-text-redwings-client-middle", ("dna", dna ?? ""), ("name", name), ("insurance", insurance)));
             clientMessage.PushNewline();
         }
         clientMessage.PushNewline();
