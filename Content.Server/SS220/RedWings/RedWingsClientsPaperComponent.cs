@@ -5,7 +5,7 @@ namespace Content.Server.SS220.RedWings;
 [RegisterComponent]
 public sealed partial class RedWingsClientPaperComponent : Component
 {
-    private const int DefaultClientAmount = 3;
+    private const int DefaultClientAmount = 4;
     private static readonly string[] DefaultForbiddenDepartment = ["Command", "Security"];
     private static readonly string[] DefaultForbiddenSpecies = ["Ipc"];
 
