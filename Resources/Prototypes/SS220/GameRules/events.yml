@@ -120,7 +120,6 @@
     startAnnouncement: station-event-unknown-shuttle-incoming
     startAudio:
       path: /Audio/Announcements/attention.ogg
-    weight: 5
     earliestStart: 1200
     minimumPlayers: 20
     maxOccurrences: 1
