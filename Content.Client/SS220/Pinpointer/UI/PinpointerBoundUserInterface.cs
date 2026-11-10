@@ -85,7 +85,7 @@ public sealed partial class PinpointerBoundUserInterface(EntityUid owner, Enum u
                     break;
                 }
 
-            case PinpointerMode.Dna: // <-- ДОБАВИТЬ
+            case PinpointerMode.Dna:
                 {
                     _dnaMenu = this.CreateWindow<DnaPinpointerMenu>();
                     _dnaMenu.OnAddDna = OnAddDna;

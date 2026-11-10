@@ -1,7 +1,7 @@
 <controls:FancyWindow
     xmlns="https://spacestation14.io"
     xmlns:controls="clr-namespace:Content.Client.UserInterface.Controls"
-    Title="{Loc 'pinpointer-ui-dna-title'}"
+    Title="{Loc 'pinpointer-ui-title'}"
     MinSize="300 250"
     Resizable="True">
 
@@ -17,7 +17,7 @@
         <Label Text="{Loc 'pinpointer-ui-dna-add-new'}" Margin="0 0 0 5"/>
         <BoxContainer Orientation="Horizontal">
             <LineEdit Name="DnaInput" 
-                      PlaceHolder="{Loc 'pinpointer-ui-dna-enter-dna'}" 
+                      PlaceHolder="{Loc 'pinpointer-ui-uplink-enter-dna'}" 
                       HorizontalExpand="True"/>
             <Button Name="AddButton" 
                     Text="{Loc 'pinpointer-ui-dna-add'}" 
