@@ -27,6 +27,8 @@ public sealed partial class PinpointerSystem : EntitySystem
         SubscribeLocalEvent<PinpointerComponent, PinpointerTargetPick>(OnPickTarget);
         SubscribeLocalEvent<PinpointerComponent, PinpointerCrewTargetPick>(OnPickCrew);
         SubscribeLocalEvent<PinpointerComponent, PinpointerDnaPick>(OnDnaPicked);
+        SubscribeLocalEvent<PinpointerComponent, PinpointerSelectDnaMessage>(OnSelectDna);
+        SubscribeLocalEvent<PinpointerComponent, PinpointerAddDnaMessage>(OnAddDna);
     }
 
     public override void Update(float frameTime)
@@ -61,6 +63,8 @@ public sealed partial class PinpointerSystem : EntitySystem
 
             case PinpointerMode.Component:
                 UpdateTargetsTrackers(uid, comp);
+                break;
+            case PinpointerMode.Dna:
                 break;
         }
 
@@ -143,11 +147,15 @@ public sealed partial class PinpointerSystem : EntitySystem
 
     private bool IsTargetValid(PinpointerComponent comp)
     {
+        if (comp.Target == null)
+            return false;
+
         return comp.Mode switch
         {
             PinpointerMode.Crew => comp.Sensors.Any(sensor => GetEntity(sensor.Entity) == comp.Target),
-            PinpointerMode.Item => comp.TrackedItems.Any(item => item.Entity == GetNetEntity(comp.Target!.Value)),
+            PinpointerMode.Item => comp.TrackedItems.Any(item => item.Entity == GetNetEntity(comp.Target.Value)),
             PinpointerMode.Component => comp.Targets.Any(target => GetEntity(target.Entity) == comp.Target),
+            PinpointerMode.Dna => comp.TrackedByDnaEntity == comp.Target,
             _ => false,
         };
     }
@@ -183,6 +191,13 @@ public sealed partial class PinpointerSystem : EntitySystem
             _pinpointer.SetActive(ent.Owner, true);
             ent.Comp.DnaToTrack = args.Dna;
             ent.Comp.TrackedByDnaEntity = target;
+
+            if (!string.IsNullOrEmpty(args.Dna) && !ent.Comp.SavedDnas.Contains(args.Dna))
+            {
+                ent.Comp.SavedDnas.Add(args.Dna);
+                Dirty(ent.Owner, ent.Comp);
+            }
+            break;
         }
     }
 
@@ -204,6 +219,94 @@ public sealed partial class PinpointerSystem : EntitySystem
             case PinpointerMode.Component:
                 _uiSystem.SetUiState(ent.Owner, PinpointerUIKey.Key, new PinpointerComponentUIState(ent.Comp.Targets));
                 break;
+            case PinpointerMode.Dna:
+                UpdateDnaUI(ent.Owner, ent.Comp);
+                break;
         }
+    }
+
+    private void OnSelectDna(Entity<PinpointerComponent> ent, ref PinpointerSelectDnaMessage args)
+    {
+        var uid = ent.Owner;
+        var comp = ent.Comp;
+
+        if (comp.Mode != PinpointerMode.Dna || !comp.SavedDnas.Contains(args.Dna))
+            return;
+
+        var query = EntityQueryEnumerator<DnaComponent>();
+        while (query.MoveNext(out var target, out var dnaComponent))
+        {
+            if (dnaComponent.DNA != args.Dna) continue;
+            if (Transform(target).MapUid != Transform(uid).MapUid) continue;
+
+            _pinpointer.SetTarget(uid, target);
+            _pinpointer.SetActive(uid, true);
+            comp.DnaToTrack = args.Dna;
+            comp.TrackedByDnaEntity = target;
+
+            UpdateDnaUI(uid, comp);
+            return;
+        }
+
+        comp.DnaToTrack = args.Dna;
+        comp.TrackedByDnaEntity = null;
+        _pinpointer.SetActive(uid, true);
+        UpdateDnaUI(uid, comp);
+    }
+
+    private void OnAddDna(Entity<PinpointerComponent> ent, ref PinpointerAddDnaMessage args)
+    {
+        var uid = ent.Owner;
+        var comp = ent.Comp;
+
+        if (comp.Mode != PinpointerMode.Dna || string.IsNullOrWhiteSpace(args.Dna)) 
+            return;
+
+        var cleanDna = args.Dna.ToUpper().Trim();
+        if (!comp.SavedDnas.Contains(cleanDna))
+        {
+            comp.SavedDnas.Add(cleanDna);
+            Dirty(uid, comp);
+        }
+        TrySetDnaTarget(uid, comp, cleanDna);
+        UpdateDnaUI(uid, comp);
+    }
+
+    private void TrySetDnaTarget(EntityUid uid, PinpointerComponent comp, string dna)
+    {
+        var query = EntityQueryEnumerator<DnaComponent>();
+        while (query.MoveNext(out var target, out var dnaComp))
+        {
+            if (dnaComp.DNA == dna && Transform(target).MapUid == Transform(uid).MapUid)
+            {
+                _pinpointer.SetTarget(uid, target); 
+                _pinpointer.SetActive(uid, true);
+                comp.DnaToTrack = dna;
+                comp.TrackedByDnaEntity = target;
+                return;
+            }
+        }
+        comp.DnaToTrack = dna;
+        comp.TrackedByDnaEntity = null;
+        _pinpointer.SetActive(uid, true);
+    }
+
+    private void UpdateDnaUI(EntityUid uid, PinpointerComponent comp)
+    {
+        float? dir = null;
+        float? dist = null;
+
+        if (comp.TrackedByDnaEntity.HasValue && Exists(comp.TrackedByDnaEntity.Value))
+        {
+            var targetEnt = comp.TrackedByDnaEntity.Value;
+            var userPos = Transform(uid).WorldPosition;
+            var targetPos = Transform(targetEnt).WorldPosition;
+            var delta = targetPos - userPos;
+            dir = (float)Math.Atan2(delta.Y, delta.X);
+            dist = delta.Length();
+        }
+
+        var state = new PinpointerDnaUIState(comp.SavedDnas, comp.DnaToTrack, dir, dist);
+        _uiSystem.SetUiState(uid, PinpointerUIKey.Key, state);
     }
 }
